@@ -1,22 +1,4 @@
-Victor-Jenkins
-MASTER_Selenium_Allure
 
-Type / to search
-Code
-Issues
-Pull requests
-Actions
-Projects
-Security
-1
-Insights
-Settings
-Build, Test, Generate Allure Report, and Deploy to gh-pages
-Build, Test, Generate Allure Report, and Deploy to gh-pages #127
-Jobs
-Run details
-Workflow file for this run
-.github/workflows/main.yml at 2dee937
 name: Build, Test, Generate Allure Report, and Deploy to gh-pages
 
 on:
