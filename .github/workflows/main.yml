@@ -25,9 +25,7 @@ jobs:
       uses: browser-actions/setup-chrome@v1
 
     - name: Build and test with Maven
-      run: mvn clean test -X -B \
-        -Dselenide.headless=true \
-        -Dallure.results.directory=target/allure-results
+      run: mvn clean test -X -B -Dselenide.headless=true -Dallure.results.directory=target/allure-results
 
     - name: Generate Allure report
       run: mvn allure:report \
