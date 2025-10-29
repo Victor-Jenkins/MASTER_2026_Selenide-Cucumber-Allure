@@ -32,18 +32,39 @@ jobs:
       - name: Install Google Chrome
         uses: browser-actions/setup-chrome@v2
 
-      - name: Run tests
-        run: mvn clean test -Dselenide.headless=true
+      #  Necesario para abrir navegador en CI (sin headless)
+      - name: Install Xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Run tests with Chrome
+        run: |
+          # Inicia servidor X virtual
+          Xvfb :99 -screen 0 1920x1080x24 &
+          export DISPLAY=:99
+          mvn clean test
 
       - name: Generate Allure report
         run: mvn allure:report
 
+      - name: Upload Allure Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: target/allure-results
+
+      - name: Upload Allure Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: target/site/allure-maven-plugin
+
       - name: Deploy Allure Report to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v7
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./target/site/allure-maven-plugin
           publish_branch: gh-pages
-          user_name: "Victor Jenkins"
-          user_email: "your-email@example.com"
+          user_name: "Victor-Jenkins"
+          user_email: "victor-jenkins@example.com"
+
 
