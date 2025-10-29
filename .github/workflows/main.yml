@@ -50,3 +50,4 @@ jobs:
           name: allure-report
           path: target/site/allure-maven-plugin
 
+
