@@ -21,22 +21,22 @@ jobs:
         distribution: 'temurin'
 
     - name: Install system dependencies for Selenium/Selenide
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          libgconf-2-4 \
-          libasound2 \
-          libatk1.0-0 \
-          libatk-bridge2.0-0 \
-          libcups2 \
-          libx11-xcb1 \
-          libxcomposite1 \
-          libxdamage1 \
-          libxrandr2 \
-          libgbm1 \
-          libpango1.0-0 \
-          libgtk-3-0 \
-          wget unzip
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y \
+      libasound2t64 \
+      libatk1.0-0 \
+      libatk-bridge2.0-0 \
+      libcups2 \
+      libx11-xcb1 \
+      libxcomposite1 \
+      libxdamage1 \
+      libxrandr2 \
+      libgbm1 \
+      libpango-1.0-0 \
+      libgtk-3-0 \
+      wget unzip
+
 
     - name: Install Maven
       uses: actions/setup-java@v3
