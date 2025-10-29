@@ -1,60 +1,67 @@
-name: CI
+name: Java CI with Maven and Allure
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-24.04
 
     steps:
-      # 1️⃣ Checkout del repositorio
-      - name: Checkout code
-        uses: actions/checkout@v4
+    # 1️⃣ Checkout del repositorio
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # 2️⃣ Setup JDK (Maven necesita Java)
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 17
+    # 2️⃣ Configuración de Java 17
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
 
-      # 3️⃣ Instalar dependencias de Chrome / Selenium
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            wget unzip xvfb libxi6 libgdk-pixbuf2.0-0 libxss1 libnss3 \
-            libatk1.0-0 libatk-bridge2.0-0 libgtk-3-0 libasound2
+    # 3️⃣ Instalar dependencias para Chrome headless
+    - name: Install dependencies for Chrome headless
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          wget unzip xvfb libxi6 libgdk-pixbuf2.0-0 libxss1 libnss3 \
+          libatk1.0-0 libatk-bridge2.0-0 libgtk-3-0 libasound2t64
 
-      # 4️⃣ Instalar Chrome
-      - name: Setup Chrome
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
+    # 4️⃣ Instalar Google Chrome estable
+    - name: Install Google Chrome
+      run: |
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        sudo apt install -y ./google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
 
-      # 5️⃣ Run Maven tests con Selenide headless
-      - name: Run tests
-        run: |
-          mvn clean test
-        env:
-          # Display virtual (Xvfb) para tests headless
-          DISPLAY: ":99"
+    # 5️⃣ Iniciar Xvfb para Chrome headless
+    - name: Start Xvfb for headless GUI
+      run: |
+        Xvfb :99 -screen 0 1920x1080x24 &
+        export DISPLAY=:99
 
-      # 6️⃣ Generar reporte Allure
-      - name: Generate Allure report
-        run: |
-          mvn allure:report
+    # 6️⃣ Build y tests con Maven
+    - name: Build and run tests
+      run: mvn clean test
 
-      # 7️⃣ Publicar artefacto del reporte
-      - name: Upload Allure report
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-report
-          path: target/site/allure-maven-plugin
+    # 7️⃣ Instalar Allure CLI
+    - name: Install Allure CLI
+      run: |
+        sudo apt-add-repository ppa:qameta/allure
+        sudo apt-get update
+        sudo apt-get install -y allure
 
+    # 8️⃣ Generar reporte Allure
+    - name: Generate Allure report
+      run: |
+        allure generate target/allure-results --clean -o target/allure-report
+
+    # 9️⃣ (Opcional) Subir reporte Allure como artefacto
+    - name: Upload Allure report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: allure-report
+        path: target/allure-report
