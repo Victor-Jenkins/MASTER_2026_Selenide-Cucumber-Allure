@@ -34,18 +34,20 @@ public class Hooks {
         if ("chrome".equalsIgnoreCase(browser)) {
             WebDriverManager.chromedriver().setup();
             ChromeOptions options = new ChromeOptions();
+
             if (isHeadless) {
                 options.addArguments("--headless=new");
                 options.addArguments("--disable-gpu");
             }
-            Configuration.browserCapabilities = options;
-        } else if ("firefox".equalsIgnoreCase(browser)) {
-            WebDriverManager.firefoxdriver().setup();
-            FirefoxOptions options = new FirefoxOptions();
-            if (isHeadless) {
-                options.addArguments("-headless");
-            }
+
+            // Evitar conflictos de directorio de usuario
+            options.addArguments("--no-sandbox");
+            options.addArguments("--disable-dev-shm-usage");
+            options.addArguments("--remote-allow-origins=*");
+            options.addArguments("--user-data-dir=/tmp/selenide-" + System.currentTimeMillis());
+
             Configuration.browserCapabilities = options;
         }
+
     }
 }
