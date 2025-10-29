@@ -1,49 +1,60 @@
-name: CI Selenide-Cucumber-Allure
+name: CI
 
 on:
   push:
     branches:
       - main
   pull_request:
+    branches:
+      - main
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      # 1️⃣ Checkout del repositorio
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      # 2️⃣ Setup JDK (Maven necesita Java)
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
 
-    - name: Install Chrome
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget unzip xvfb libnss3 libxss1 libgconf-2-4 libgtk-3-0
-        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
-        google-chrome --version
+      # 3️⃣ Instalar dependencias de Chrome / Selenium
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            wget unzip xvfb libxi6 libgdk-pixbuf2.0-0 libxss1 libnss3 \
+            libatk1.0-0 libatk-bridge2.0-0 libgtk-3-0 libasound2
 
-    - name: Install Maven
-      uses: actions/setup-java@v3
-      with:
-        java-version: 17
-        distribution: 'temurin'
-        cache: maven
+      # 4️⃣ Instalar Chrome
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
 
-    - name: Run tests
-      run: mvn clean test -Dselenide.headless=true -Dmaven.test.failure.ignore=true
+      # 5️⃣ Run Maven tests con Selenide headless
+      - name: Run tests
+        run: |
+          mvn clean test
+        env:
+          # Display virtual (Xvfb) para tests headless
+          DISPLAY: ":99"
 
-    - name: Generate Allure report
-      run: mvn allure:report
+      # 6️⃣ Generar reporte Allure
+      - name: Generate Allure report
+        run: |
+          mvn allure:report
 
-    - name: Upload Allure report
-      uses: actions/upload-artifact@v4
-      with:
-        name: allure-report
-        path: target/site/allure-maven/index.html
+      # 7️⃣ Publicar artefacto del reporte
+      - name: Upload Allure report
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: target/site/allure-maven-plugin
 
