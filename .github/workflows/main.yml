@@ -1,41 +1,64 @@
-name: Build, Test, Generate Allure Report, and Deploy to gh-pages
+name: Selenide Tests CI
 
 on:
   push:
     branches:
       - main
-  schedule:
-    - cron: '0 0 * * 0' # Ejecutar cada domingo a la medianoche (UTC)
+  pull_request:
 
 jobs:
-  build-and-deploy:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      # 1️⃣ Checkout del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Set up JDK 17
+      # 2️⃣ Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v3
         with:
+          distribution: temurin
           java-version: '17'
-          distribution: 'temurin'
 
-      - name: Set up Chrome
+      # 3️⃣ Setup Maven
+      - name: Setup Maven
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # 4️⃣ Cache Maven dependencies
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      # 5️⃣ Install Google Chrome
+      - name: Install Google Chrome
         uses: browser-actions/setup-chrome@v1
+
+      # 6️⃣ Run Maven tests
+      - name: Run Selenide Tests
+        env:
+          DISPLAY: :99
+        run: |
+          mvn clean test -B -e
+
+      # 7️⃣ Generate Allure Report
+      - name: Generate Allure Report
+        run: |
+          mvn allure:report
+
+      # 8️⃣ Upload Allure Report as artifact
+      - name: Upload Allure Report
+        uses: actions/upload-artifact@v3
         with:
-          chrome-version: stable
-
-      - name: Build and test with Maven
-        run: mvn clean install -Dselenide.headless=true
-
-      - name: Generate Allure report
-        run: mvn allure:report
-
-      - name: Deploy Allure Report to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/allure-report
-          publish_branch: gh-pages
+          name: allure-report
+          path: target/site/allure-maven-plugin
 
