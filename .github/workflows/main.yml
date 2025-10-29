@@ -1,4 +1,3 @@
-
 name: Build, Test, Generate Allure Report, and Deploy to gh-pages
 
 on:
@@ -22,15 +21,23 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: Set up Chrome for headless tests
+      uses: browser-actions/setup-chrome@v1
+
     - name: Build and test with Maven
-      run: mvn clean install
+      run: mvn clean test -X -B \
+        -Dselenide.headless=true \
+        -Dallure.results.directory=target/allure-results
 
     - name: Generate Allure report
-      run: mvn allure:report
+      run: mvn allure:report \
+        -Dallure.results.directory=target/allure-results \
+        -Dallure.report.directory=target/allure-report
 
     - name: Deploy Allure Report to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.SELENIUM }}
-        publish_dir: ./target/results/allure-report
+        publish_dir: ./target/allure-report
         publish_branch: gh-pages
+
