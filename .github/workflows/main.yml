@@ -1,77 +1,64 @@
-name: CI Selenide-Cucumber-Allure
+name: CI - Selenide Cucumber Allure
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout del repo
-      - uses: actions/checkout@v3
+    # 1️⃣ Checkout del repo
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      # 2️⃣ Configurar Java
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+    # 2️⃣ Configurar Java (Maven)
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: 17
 
-      # 3️⃣ Cache de Maven
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+    # 3️⃣ Instalar Chrome y ChromeDriver
+    - name: Install Chrome
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget unzip xvfb libxi6 libgconf-2-4 default-jdk
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
+        google-chrome --version
 
-      # 4️⃣ Instalar Google Chrome
-      - name: Install Google Chrome
-        uses: browser-actions/setup-chrome@v2
+    - name: Install ChromeDriver
+      uses: nanasess/setup-chromedriver@v1
+      with:
+        chromedriver-version: latest
 
-      # 5️⃣ Instalar Xvfb para ejecutar navegador real en CI
-      - name: Install Xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+    # 4️⃣ Cache de dependencias Maven
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
 
-      # 6️⃣ Ejecutar tests con Maven, capturando screenshots y ignorando fallos para continuar
-      - name: Run tests with Chrome
-        run: |
-          Xvfb :99 -screen 0 1920x1080x24 &
-          export DISPLAY=:99
-          mvn clean test -Dmaven.test.failure.ignore=true
+    # 5️⃣ Run tests con Maven y Chrome headless
+    - name: Run tests
+      run: |
+        mvn clean test -Dselenide.headless=true -B
 
-      # 7️⃣ Generar Allure report
-      - name: Generate Allure report
-        run: mvn allure:report
+    # 6️⃣ Generate Allure report
+    - name: Generate Allure Report
+      run: |
+        mvn allure:report
 
-      # 8️⃣ Subir Allure results como artifact
-      - name: Upload Allure Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results
-          path: target/allure-results
-
-      # 9️⃣ Subir Allure report como artifact
-      - name: Upload Allure Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-report
-          path: target/site/allure-maven-plugin
-
-      # 🔟 Publicar Allure report en GitHub Pages
-      - name: Deploy Allure Report to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/site/allure-maven-plugin
-          publish_branch: gh-pages
-          user_name: "Victor-Jenkins"
-          user_email: "victor-jenkins@example.com"
+    # 7️⃣ Upload Allure report as artifact
+    - name: Upload Allure Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-report
+        path: target/site/allure-maven-plugin
 
