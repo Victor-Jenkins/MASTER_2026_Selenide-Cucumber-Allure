@@ -12,30 +12,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Set up Chrome for headless tests
-      uses: browser-actions/setup-chrome@v1
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
 
-    - name: Build and test with Maven
-      run: mvn clean test -X -B -Dselenide.headless=true -Dallure.results.directory=target/allure-results
+      - name: Build and test with Maven
+        run: mvn clean install -Dselenide.headless=true
 
-    - name: Generate Allure report
-      run: mvn allure:report \
-        -Dallure.results.directory=target/allure-results \
-        -Dallure.report.directory=target/allure-report
+      - name: Generate Allure report
+        run: mvn allure:report
 
-    - name: Deploy Allure Report to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.SELENIUM }}
-        publish_dir: ./target/allure-report
-        publish_branch: gh-pages
+      - name: Deploy Allure Report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/allure-report
+          publish_branch: gh-pages
 
