@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   pull_request:
 
+permissions:
+  contents: write
+  pages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -26,7 +30,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Cache Maven dependencies
+      - name: Cache Maven packages
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
