@@ -54,19 +54,22 @@ jobs:
           echo "Contenido de target:"
           ls -R target || true
 
-      # 8️⃣ Instalar Allure CLI
+      # 8️⃣ Instalar Allure CLI desde el release oficial
       - name: Install Allure CLI
         run: |
-          echo "Instalando Allure CLI..."
-          sudo apt-get update
-          sudo apt-get install -y allure
+          echo "Instalando Allure CLI desde binarios oficiales..."
+          wget -q https://github.com/allure-framework/allure2/releases/latest/download/allure-2.27.0.tgz
+          tar -xzf allure-2.27.0.tgz
+          sudo mv allure-2.27.0 /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/local/bin/allure
+          allure --version
 
-      # 9️⃣ Generar reporte Allure con CLI (aunque no haya resultados)
+      # 9️⃣ Generar reporte Allure con CLI
       - name: Generate Allure Report (CLI)
         if: always()
         run: |
           echo "Generando reporte Allure con CLI..."
-          if [ ! -d "target/allure-results" ]; then
+          if [ ! -d "target/allure-results" ] || [ -z "$(ls -A target/allure-results)" ]; then
             echo "⚠️ No se encontraron resultados, creando dummy report..."
             mkdir -p target/allure-results
             echo '{}' > target/allure-results/dummy.json
