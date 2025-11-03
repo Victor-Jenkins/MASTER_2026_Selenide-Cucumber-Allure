@@ -1,4 +1,4 @@
-name: Selenide‑Cucumber‑Allure Tests & Deploy to Pages
+name: Selenide-Cucumber-Allure Tests & Deploy to Pages
 
 on:
   push:
@@ -19,43 +19,60 @@ jobs:
           - 4444:4444
         options: >-
           --shm-size=2g
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - name: Run tests allow failures
-        continue-on-error: true
-        run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub -Dselenide.headless=true -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" -Dsurefire.printSummary=true
 
+      # 🧪 Ejecuta los tests con Selenide y Cucumber
+      - name: Run tests (allow failures)
+        continue-on-error: true
+        run: >
+          mvn clean test -B
+          -Dselenide.remote=http://localhost:4444/wd/hub
+          -Dselenide.headless=true
+          -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800"
+          -Dsurefire.printSummary=true
+
+      # 🗂️ Asegura que el directorio exista
       - name: Ensure Allure results directory exists
         run: mkdir -p target/allure-results
 
+      # 🧰 Instala Allure CLI
+      - name: Install Allure CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y allure
+
+      # 🏗️ Genera el reporte HTML de Allure
       - name: Generate Allure report
-        run: mvn allure:report
+        if: always()
+        run: |
+          echo "Generating Allure HTML report..."
+          allure generate --clean target/allure-results -o target/allure-report
+          echo "Report generated in target/allure-report"
+          ls -R target/allure-report || true
 
-      - name: Upload Allure report artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-report
-          path: target/site/allure-maven-plugin
-
+      # 🚀 Publica el reporte en GitHub Pages
       - name: Deploy report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
+        if: always()
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: target/site/allure-maven-plugin
           publish_branch: gh-pages
-          keep_files: true
+          publish_dir: target/allure-report
+          enable_jekyll: false
