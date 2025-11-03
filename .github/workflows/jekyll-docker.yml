@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   pages: write
+  id-token: write
 
 jobs:
   test:
@@ -48,10 +49,6 @@ jobs:
           -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800"
           -Dsurefire.printSummary=true
 
-      # 🗂️ Asegura que el directorio exista
-      - name: Ensure Allure results directory exists
-        run: mkdir -p target/allure-results
-
       # 🧰 Instala Allure CLI
       - name: Install Allure CLI
         run: |
@@ -65,19 +62,36 @@ jobs:
           echo "Generating Allure HTML report..."
           allure generate --clean target/allure-results -o target/allure-report
           echo "Report generated in target/allure-report"
-          ls -R target/allure-report || true
+          ls -R target/allure-report || echo "❌ Report directory empty!"
 
-      # 🚀 Publica el reporte en GitHub Pages
-      - name: Deploy report to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        if: always()
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: target/allure-report
-          enable_jekyll: false
+      # 🧩 Verifica los archivos generados
       - name: Verify Allure report files
         if: always()
         run: |
           echo "=== Contents of target/allure-report ==="
           ls -R target/allure-report || echo "❌ No Allure report generated!"
+
+      # 📦 Sube el reporte como artifact de Pages
+      - name: Upload Allure report artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/allure-report
+
+  # 🚀 Despliegue nativo en GitHub Pages
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
