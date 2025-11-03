@@ -40,9 +40,7 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build & Run Tests
-        run: mvn clean test -B \
-          -Dselenide.headless=true \
-          -Dselenide.browser=chrome \
+        run: mvn clean test -B -Dselenide.headless=true -Dselenide.remote=http://selenium
           -Dselenide.remote=http://selenium:4444
 
       - name: Generate Allure Report
