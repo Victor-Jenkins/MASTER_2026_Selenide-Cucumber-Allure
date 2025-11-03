@@ -1,28 +1,35 @@
-name: Java Selenide + Cucumber + Allure Tests
+name: Selenide-Cucumber-Allure Tests
 
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+      image: maven:3.9.2-eclipse-temurin-17
     services:
       selenium:
-        image: selenium/standalone-chrome:115.0
+        image: selenium/standalone-chrome:latest
         ports:
           - 4444:4444
+        options: >-
+          --shm-size=2g
+          --privileged
+          --name selenium
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Cache Maven packages
         uses: actions/cache@v3
@@ -32,21 +39,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Run tests
-        env:
-          SELENIDE_REMOTE: "http://localhost:4444/wd/hub"
-          SELENIDE_BROWSER: "chrome"
-          SELENIDE_HEADLESS: "true"
-        run: |
-          mvn clean test -B \
-            -Dselenide.remote=$SELENIDE_REMOTE \
-            -Dselenide.browser=$SELENIDE_BROWSER \
-            -Dselenide.headless=$SELENIDE_HEADLESS \
-            -Pallure
+      - name: Build & Run Tests
+        run: mvn clean test -B \
+          -Dselenide.headless=true \
+          -Dselenide.browser=chrome \
+          -Dselenide.remote=http://selenium:4444
 
-      - name: Generate Allure report
+      - name: Generate Allure Report
         run: |
           mvn allure:report
+          mvn allure:serve
+
+      - name: Upload Allure Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: target/site/allure-maven-plugin
+
 
       - name: Upload Allure report
         uses: actions/upload-artifact@v3
