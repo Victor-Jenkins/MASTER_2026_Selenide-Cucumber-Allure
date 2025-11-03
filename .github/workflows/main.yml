@@ -40,12 +40,17 @@ jobs:
 
       - name: Run tests (allow failures)
         continue-on-error: true
-        run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub -Dselenide.headless=true -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" -Dsurefire.printSummary=true
+        run: |
+          mvn clean test -B \
+            -Dselenide.remote=http://localhost:4444/wd/hub \
+            -Dselenide.headless=true \
+            -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" \
+            -Dsurefire.printSummary=true
 
       - name: Ensure Allure results directory exists
         run: mkdir -p target/allure-results
 
-      - name: Generate or fallback Allure report
+      - name: Generate Allure report or fallback
         run: |
           if [ -d target/allure-results ] && [ "$(ls -A target/allure-results)" ]; then
             mvn allure:report
@@ -68,3 +73,4 @@ jobs:
           publish_dir: target/site/allure-maven-plugin
           publish_branch: gh-pages
           keep_files: true
+
