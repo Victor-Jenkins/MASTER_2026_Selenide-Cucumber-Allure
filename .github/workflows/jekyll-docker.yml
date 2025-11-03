@@ -8,7 +8,7 @@ on:
 permissions:
   contents: write
   pages: write
-  id-token: write
+  id-token: write   # necesario para deploy nativo
 
 jobs:
   test:
@@ -39,7 +39,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # 🧪 Ejecuta los tests con Selenide y Cucumber
+      # Ejecuta los tests
       - name: Run tests (allow failures)
         continue-on-error: true
         run: >
@@ -49,49 +49,32 @@ jobs:
           -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800"
           -Dsurefire.printSummary=true
 
-      # 🧰 Instala Allure CLI
+      # Asegura que exista el directorio de resultados
+      - name: Ensure Allure results directory exists
+        run: mkdir -p target/allure-results
+
+      # Instala Allure CLI
       - name: Install Allure CLI
         run: |
           sudo apt-get update
           sudo apt-get install -y allure
 
-      # 🏗️ Genera el reporte HTML de Allure
+      # Genera el reporte HTML de Allure
       - name: Generate Allure report
         if: always()
         run: |
           echo "Generating Allure HTML report..."
           allure generate --clean target/allure-results -o target/allure-report
           echo "Report generated in target/allure-report"
-          ls -R target/allure-report || echo "❌ Report directory empty!"
+          ls -R target/allure-report || true
 
-      # 🧩 Verifica los archivos generados
-      - name: Verify Allure report files
-        if: always()
-        run: |
-          echo "=== Contents of target/allure-report ==="
-          ls -R target/allure-report || echo "❌ No Allure report generated!"
-
-      # 📦 Sube el reporte como artifact de Pages
-      - name: Upload Allure report artifact
-        if: always()
-        uses: actions/upload-pages-artifact@v3
+      # 🗂️ Empaqueta el reporte como artifact de Pages
+      - name: Upload Allure report to GitHub Pages
+        uses: actions/upload-pages-artifact@v1
         with:
           path: target/allure-report
 
-  # 🚀 Despliegue nativo en GitHub Pages
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      # 🚀 Despliega el artifact en GitHub Pages
+      - name: Deploy Allure report to GitHub Pages
+        uses: actions/deploy-pages@v1
 
