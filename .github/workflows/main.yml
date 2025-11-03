@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Java 17 y cache de Maven
+      # 2️⃣ Setup Java 17 con cache de Maven
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
@@ -27,25 +27,25 @@ jobs:
       - name: Install Google Chrome
         uses: browser-actions/setup-chrome@v1
 
-      # 4️⃣ Crear carpeta para resultados Allure (por si no existe)
+      # 4️⃣ Crear carpeta para resultados Allure
       - name: Prepare Allure Results Folder
         run: mkdir -p target/allure-results
 
       # 5️⃣ Instalar dependencias Allure necesarias (sin tocar pom.xml)
       - name: Install Allure dependencies
         run: |
-          echo "Instalando dependencias de Allure..."
+          echo "Instalando dependencias de Allure (Cucumber + Selenide)..."
           mvn dependency:get -Dartifact=io.qameta.allure:allure-cucumber7-jvm:2.24.0
           mvn dependency:get -Dartifact=io.qameta.allure:allure-selenide:2.24.0
 
-      # 6️⃣ Ejecutar los tests (modo headless)
+      # 6️⃣ Ejecutar los tests en modo headless
       - name: Run Selenide Tests (Headless)
         env:
           SELENIDE_HEADLESS: true
           MAVEN_OPTS: "-Dselenide.headless=true -Dselenide.browser=chrome"
         run: |
           echo "Ejecutando tests en modo headless..."
-          mvn clean test -B -e || true  # Continuar aunque falle para ver reportes
+          mvn clean test -B -e || true  # No romper la build si fallan tests
 
       # 7️⃣ Mostrar contenido del directorio target (debug)
       - name: List Target Directory
@@ -54,22 +54,30 @@ jobs:
           echo "Contenido de target:"
           ls -R target || true
 
-      # 8️⃣ Generar reporte Allure (aunque falle la build)
-      - name: Generate Allure Report
+      # 8️⃣ Instalar Allure CLI
+      - name: Install Allure CLI
+        run: |
+          echo "Instalando Allure CLI..."
+          sudo apt-get update
+          sudo apt-get install -y allure
+
+      # 9️⃣ Generar reporte Allure con CLI (aunque no haya resultados)
+      - name: Generate Allure Report (CLI)
         if: always()
         run: |
-          echo "Generando reporte Allure..."
+          echo "Generando reporte Allure con CLI..."
           if [ ! -d "target/allure-results" ]; then
-            echo "⚠️ No se encontraron resultados. Creando dummy Allure report..."
+            echo "⚠️ No se encontraron resultados, creando dummy report..."
             mkdir -p target/allure-results
             echo '{}' > target/allure-results/dummy.json
           fi
-          mvn io.qameta.allure:allure-maven:2.13.9:report || true
+          allure generate target/allure-results --clean -o target/allure-report || true
+          echo "✅ Reporte generado en target/allure-report"
 
-      # 9️⃣ Subir el reporte como artefacto
+      # 🔟 Subir el reporte como artefacto
       - name: Upload Allure Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
-          path: target/site/allure-maven-plugin
+          path: target/allure-report
