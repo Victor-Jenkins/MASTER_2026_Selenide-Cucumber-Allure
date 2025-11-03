@@ -10,15 +10,14 @@ permissions:
   pages: write
 
 jobs:
-  test:
+  test-and-deploy:
     runs-on: ubuntu-latest
     services:
       selenium:
         image: selenium/standalone-chrome:latest
         ports:
           - 4444:4444
-        options: >-
-          --shm-size=2g
+        options: --shm-size=2g
 
     steps:
       - name: Checkout repository
@@ -47,30 +46,30 @@ jobs:
             -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" \
             -Dsurefire.printSummary=true
 
-      - name: Ensure Allure results directory exists
-        run: mkdir -p target/allure-results
+      - name: Install Allure
+        run: sudo apt-get update && sudo apt-get install -y allure
 
-      - name: Generate Allure report or fallback
+      - name: Generate Allure report
         run: |
           if [ -d target/allure-results ] && [ "$(ls -A target/allure-results)" ]; then
-            mvn allure:report
+            allure generate target/allure-results -o target/allure-report --clean
           else
             echo "⚠️ No Allure results found, creating placeholder page"
-            mkdir -p target/site/allure-maven-plugin
-            echo "<html><body><h2>No Allure report generated</h2><p>Tests may have failed or produced no results.</p></body></html>" > target/site/allure-maven-plugin/index.html
+            mkdir -p target/allure-report
+            echo "<html><body><h2>No Allure report generated</h2><p>Tests may have failed or produced no results.</p></body></html>" > target/allure-report/index.html
           fi
 
       - name: Upload Allure report artifact
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
-          path: target/site/allure-maven-plugin
+          path: target/allure-report
 
       - name: Deploy report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: target/site/allure-maven-plugin
+          publish_dir: target/allure-report
           publish_branch: gh-pages
           keep_files: true
 
