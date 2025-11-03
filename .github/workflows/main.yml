@@ -1,4 +1,4 @@
-name: Selenide‑Cucumber‑Allure Tests
+name: Selenide‑Cucumber‑Allure Tests & Deploy to Pages
 
 on:
   push:
@@ -36,13 +36,26 @@ jobs:
 
       - name: Run tests (allow failures)
         continue-on-error: true
-        run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub -Dselenide.headless=true -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" -Dsurefire.printSummary=true
+        run: |
+          mvn clean test -B \
+            -Dselenide.remote=http://localhost:4444/wd/hub \
+            -Dselenide.headless=true \
+            -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" \
+            -Dsurefire.printSummary=true
 
       - name: Generate Allure report
         run: mvn allure:report
 
-      - name: Upload Allure report
+      - name: Upload Allure report artifact
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
           path: target/site/allure-maven-plugin
+
+      - name: Deploy report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: target/site/allure-maven-plugin
+          publish_branch: gh-pages
+          keep_files: true
