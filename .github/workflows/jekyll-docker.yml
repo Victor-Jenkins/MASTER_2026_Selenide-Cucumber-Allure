@@ -76,3 +76,8 @@ jobs:
           publish_branch: gh-pages
           publish_dir: target/allure-report
           enable_jekyll: false
+      - name: Verify Allure report files
+        if: always()
+        run: |
+          echo "=== Contents of target/allure-report ==="
+          ls -R target/allure-report || echo "❌ No Allure report generated!"
