@@ -1,8 +1,8 @@
-/home/victor/IdeaProjects/selenide-cucumber-allure/src/test/java/steps/LoginSteps.java
-/home/victor/IdeaProjects/selenide-cucumber-allure/src/test/java/runners/RunCucumberTest.java
-/home/victor/IdeaProjects/selenide-cucumber-allure/src/test/java/steps/GoogleSteps.java
-/home/victor/IdeaProjects/selenide-cucumber-allure/src/test/java/samples/SampleSmokeTest.java
-/home/victor/IdeaProjects/selenide-cucumber-allure/src/test/java/steps/AssertionSteps.java
-/home/victor/IdeaProjects/selenide-cucumber-allure/src/test/java/hooks/Hooks.java
-/home/victor/IdeaProjects/selenide-cucumber-allure/src/test/java/steps/FormSteps.java
-/home/victor/IdeaProjects/selenide-cucumber-allure/src/test/java/steps/NavigationSteps.java
+/home/victor/IdeaProjects/MASTER_2026_Selenide_Cucumber_Allure/src/test/java/runners/RunCucumberTest.java
+/home/victor/IdeaProjects/MASTER_2026_Selenide_Cucumber_Allure/src/test/java/steps/GoogleSteps.java
+/home/victor/IdeaProjects/MASTER_2026_Selenide_Cucumber_Allure/src/test/java/steps/AssertionSteps.java
+/home/victor/IdeaProjects/MASTER_2026_Selenide_Cucumber_Allure/src/test/java/steps/LoginSteps.java
+/home/victor/IdeaProjects/MASTER_2026_Selenide_Cucumber_Allure/src/test/java/steps/FormSteps.java
+/home/victor/IdeaProjects/MASTER_2026_Selenide_Cucumber_Allure/src/test/java/steps/NavigationSteps.java
+/home/victor/IdeaProjects/MASTER_2026_Selenide_Cucumber_Allure/src/test/java/hooks/Hooks.java
+/home/victor/IdeaProjects/MASTER_2026_Selenide_Cucumber_Allure/src/test/java/samples/SampleSmokeTest.java
