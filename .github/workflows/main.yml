@@ -1,16 +1,14 @@
-name: Selenide-Cucumber-Allure Tests
+name: Java Selenium CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    container:
-      image: maven:3.9.2-eclipse-temurin-17
     services:
       selenium:
         image: selenium/standalone-chrome:latest
@@ -18,8 +16,10 @@ jobs:
           - 4444:4444
         options: >-
           --shm-size=2g
-          --privileged
-          --name selenium
+          --health-cmd="curl -f http://localhost:4444/wd/hub/status || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout code
@@ -28,8 +28,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
           java-version: '17'
+          distribution: 'temurin'
 
       - name: Cache Maven packages
         uses: actions/cache@v3
@@ -39,24 +39,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build & Run Tests
-        run: mvn clean test -B -Dselenide.headless=true -Dselenide.remote=http://selenium
-          -Dselenide.remote=http://selenium:4444
+      - name: Build and test
+        run: mvn clean test \
+          -Dselenide.remote=http://localhost:4444/wd/hub \
+          -Dsurefire.printSummary=true \
+          -B
 
-      - name: Generate Allure Report
-        run: |
-          mvn allure:report
-          mvn allure:serve
+      - name: Generate Allure results
+        run: mvn allure:report
 
-      - name: Upload Allure Report Artifact
+      - name: Upload Allure report artifact
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
           path: target/site/allure-maven-plugin
 
-
-      - name: Upload Allure report
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report
-          path: target/site/allure-maven/index.html
+          name: test-results
+          path: target/surefire-reports/
