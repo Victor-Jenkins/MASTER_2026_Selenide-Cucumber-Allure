@@ -3,7 +3,6 @@ name: Selenide-Cucumber-Allure Tests & Deploy
 on:
   push:
     branches: [ main ]
-  pull_request:
 
 permissions:
   contents: write
@@ -17,8 +16,7 @@ jobs:
         image: selenium/standalone-chrome:latest
         ports:
           - 4444:4444
-        options: >-
-          --shm-size=2g
+        options: --shm-size=2g
 
     steps:
       - name: Checkout repository
@@ -38,20 +36,34 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Install Allure CLI
-        run: sudo apt update && sudo apt install -y allure
-
       - name: Run tests (allow failures)
         continue-on-error: true
-        run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub \
+        run: |
+          mvn clean test -B \
+          -Dselenide.remote=http://localhost:4444/wd/hub \
           -Dselenide.headless=true \
           -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" \
           -Dsurefire.printSummary=true
 
-      - name: Generate Allure report
-        run: allure generate target/allure-results -o target/allure-report --clean
+      - name: Install Allure CLI
+        run: |
+          ALLURE_VERSION=2.27.0
+          wget https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.zip
+          unzip allure-${ALLURE_VERSION}.zip -d $HOME/allure
+          echo "$HOME/allure/allure-${ALLURE_VERSION}/bin" >> $GITHUB_PATH
 
-      - name: Deploy Allure report to GitHub Pages
+      - name: Generate Allure report
+        run: |
+          mkdir -p target/allure-report
+          if [ -d target/allure-results ] && [ "$(ls -A target/allure-results)" ]; then
+            allure generate target/allure-results -o target/allure-report --clean
+          else
+            echo "⚠️ No Allure results found, creating placeholder page"
+            echo "<html><body><h2>No Allure report generated</h2></body></html>" > target/allure-report/index.html
+          fi
+
+      - name: Deploy report to GitHub Pages
+        if: always()  # despliega aunque fallen los tests
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
