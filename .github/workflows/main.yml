@@ -42,33 +42,35 @@ jobs:
         continue-on-error: true
         run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub -Dselenide.headless=true -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" -Dsurefire.printSummary=true
 
-      - name: Ensure Allure results directory exists
-        run: mkdir -p target/allure-results
-
-      - name: Generate Allure report
+      - name: Generate Allure report (or fallback)
         run: |
+          # Crear carpeta de resultados si no existe
+          mkdir -p target/allure-results
+          
+          # Verificar si hay resultados
           if [ -d target/allure-results ] && [ "$(ls -A target/allure-results)" ]; then
+            echo "✅ Allure results found, generating report..."
             mvn allure:report
           else
-            echo "⚠️ No Allure results found, creating placeholder page"
-            mkdir -p target/allure-report
-            echo "<html><body><h2>No Allure report generated</h2><p>Tests may have failed or produced no results.</p></body></html>" > target/allure-report/index.html
+            echo "⚠️ No Allure results found, generating placeholder report..."
+            mkdir -p target/site/allure-maven-plugin
+            echo "<html><body><h2>No Allure report generated</h2><p>Tests may have failed or produced no results.</p></body></html>" > target/site/allure-maven-plugin/index.html
           fi
 
       - name: List Allure report files
-        run: ls -R target/allure-report
+        run: ls -R target/site/allure-maven-plugin
 
       - name: Upload Allure report artifact
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
-          path: target/allure-report
+          path: target/site/allure-maven-plugin
 
       - name: Deploy report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: target/allure-report
+          publish_dir: target/site/allure-maven-plugin
           publish_branch: gh-pages
           keep_files: false
 
