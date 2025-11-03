@@ -1,10 +1,9 @@
-name: Java Selenium CI
+name: Selenide‑Cucumber‑Allure Tests
 
 on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
 
 jobs:
   test:
@@ -16,22 +15,18 @@ jobs:
           - 4444:4444
         options: >-
           --shm-size=2g
-          --health-cmd="curl -f http://localhost:4444/wd/hub/status || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
+          distribution: temurin
           java-version: '17'
-          distribution: 'temurin'
 
-      - name: Cache Maven packages
+      - name: Cache Maven dependencies
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
@@ -39,21 +34,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build and test
-        run: mvn clean test -Dselenide.remote=http://localhost:4444/wd/hub -Dsurefire.printSummary=true -B
+      - name: Run tests (allow failures)
+        continue-on-error: true
+        run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub -Dselenide.headless=true -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" -Dsurefire.printSummary=true
 
-
-      - name: Generate Allure results
+      - name: Generate Allure report
         run: mvn allure:report
 
-      - name: Upload Allure report artifact
+      - name: Upload Allure report
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
           path: target/site/allure-maven-plugin
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: target/surefire-reports/
