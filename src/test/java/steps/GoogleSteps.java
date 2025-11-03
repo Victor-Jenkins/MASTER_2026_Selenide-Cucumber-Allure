@@ -1,6 +1,9 @@
 package steps;
 
+import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
+import io.cucumber.java.AfterAll;
+import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -14,7 +17,18 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class GoogleSteps {
+    @BeforeAll
+    public static void setUpAll() {
+        Configuration.headless = true;
+        Configuration.browserSize = "1920x1080";
+        Configuration.timeout = 15000; // 15 s
+        Configuration.pageLoadTimeout = 30000; // 30 s
+    }
 
+    @AfterAll
+    public static void tearDownAll() {
+        closeWebDriver();
+    }
     @Given("I open Google")
     public void i_open_google() {
         open("https://github.com/");

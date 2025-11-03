@@ -1,6 +1,9 @@
 package steps;
 
+import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
+import io.cucumber.java.AfterAll;
+import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.*;
 
 import static com.codeborne.selenide.Condition.visible;
@@ -8,7 +11,18 @@ import static com.codeborne.selenide.Selenide.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LoginSteps {
+    @BeforeAll
+    public static void setUpAll() {
+        Configuration.headless = true;
+        Configuration.browserSize = "1920x1080";
+        Configuration.timeout = 15000; // 15 s
+        Configuration.pageLoadTimeout = 30000; // 30 s
+    }
 
+    @AfterAll
+    public static void tearDownAll() {
+        closeWebDriver();
+    }
     @Given("I open the login page")
     public void i_open_the_login_page() {
         open("https://wikipedia.com");
