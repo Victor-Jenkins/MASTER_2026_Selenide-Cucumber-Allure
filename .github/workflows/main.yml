@@ -1,14 +1,18 @@
-name: Java Selenide Tests
+name: Java Selenide + Cucumber + Allure Tests
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
+    services:
+      selenium:
+        image: selenium/standalone-chrome:115.0
+        ports:
+          - 4444:4444
 
     steps:
       - name: Checkout repository
@@ -29,7 +33,23 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Run tests
+        env:
+          SELENIDE_REMOTE: "http://localhost:4444/wd/hub"
+          SELENIDE_BROWSER: "chrome"
+          SELENIDE_HEADLESS: "true"
         run: |
           mvn clean test -B \
-            -Dselenide.headless=true \
-            -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--remote-allow-origins=*"
+            -Dselenide.remote=$SELENIDE_REMOTE \
+            -Dselenide.browser=$SELENIDE_BROWSER \
+            -Dselenide.headless=$SELENIDE_HEADLESS \
+            -Pallure
+
+      - name: Generate Allure report
+        run: |
+          mvn allure:report
+
+      - name: Upload Allure report
+        uses: actions/upload-artifact@v3
+        with:
+          name: allure-report
+          path: target/site/allure-maven/index.html
