@@ -8,7 +8,7 @@ on:
 permissions:
   contents: write
   pages: write
-  id-token: write   # necesario para deploy nativo
+  id-token: write  # necesario para deploy nativo
 
 jobs:
   test:
@@ -22,15 +22,18 @@ jobs:
           --shm-size=2g
 
     steps:
+      # 1️⃣ Clonar el repositorio
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Configurar JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+      # 3️⃣ Cache de dependencias Maven
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
@@ -39,42 +42,29 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # Ejecuta los tests
-      - name: Run tests (allow failures)
+      # 4️⃣ Ejecutar tests y generar reporte Allure con Maven
+      - name: Run tests and generate Allure report (allow failures)
         continue-on-error: true
-        run: >
-          mvn clean test -B
-          -Dselenide.remote=http://localhost:4444/wd/hub
-          -Dselenide.headless=true
-          -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800"
-          -Dsurefire.printSummary=true
+        run: mvn clean test site -B
 
-      # Asegura que exista el directorio de resultados
-      - name: Ensure Allure results directory exists
-        run: mkdir -p target/allure-results
-
-      # Instala Allure CLI
-      - name: Install Allure CLI
+      # 5️⃣ Verificar que el reporte exista
+      - name: Verify Allure report
         run: |
-          sudo apt-get update
-          sudo apt-get install -y allure
+          if [ -d target/site/allure-maven-plugin ]; then
+            echo "✅ Allure report generated"
+            ls -R target/site/allure-maven-plugin
+          else
+            echo "❌ Allure report not found!"
+            exit 1
+          fi
 
-      # Genera el reporte HTML de Allure
-      - name: Generate Allure report
-        if: always()
-        run: |
-          echo "Generating Allure HTML report..."
-          allure generate --clean target/allure-results -o target/allure-report
-          echo "Report generated in target/allure-report"
-          ls -R target/allure-report || true
-
-      # 🗂️ Empaqueta el reporte como artifact de Pages
-      - name: Upload Allure report to GitHub Pages
+      # 6️⃣ Subir el reporte a GitHub Pages
+      - name: Upload Allure Maven report to GitHub Pages
         uses: actions/upload-pages-artifact@v1
         with:
-          path: target/allure-report
+          path: target/site/allure-maven-plugin
 
-      # 🚀 Despliega el artifact en GitHub Pages
-      - name: Deploy Allure report to GitHub Pages
+      # 7️⃣ Desplegar el reporte en GitHub Pages
+      - name: Deploy Allure Maven report to GitHub Pages
         uses: actions/deploy-pages@v1
 
