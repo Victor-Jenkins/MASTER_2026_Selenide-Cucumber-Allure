@@ -38,12 +38,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Run tests (allow failures)
-        continue-on-error: true
-        run: |
-         - name: Run tests (allow failures)
-          continue-on-error: true
-          run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub -Dselenide.headless=true -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" -Dsurefire.printSummary=true
+      - name: Run tests allow failures continue-on-error true  
+        continue-on-error: true  
+        run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub -Dselenide.headless=true -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" -Dsurefire.printSummary=true  
+
 
 
       - name: Generate Allure report
