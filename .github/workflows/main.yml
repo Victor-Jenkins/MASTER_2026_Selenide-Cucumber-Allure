@@ -1,4 +1,4 @@
-name: Selenide Tests CI
+name: Java CI with Selenide
 
 on:
   push:
@@ -11,64 +11,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout del repositorio
+      # 1️⃣ Clonar repositorio
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      # 2️⃣ Setup Java 17 y cache de Maven
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
+      # 2️⃣ Configurar JDK
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          distribution: temurin
           java-version: '17'
-          cache: maven
+          distribution: 'temurin'
 
-      # 3️⃣ Instalar Google Chrome
+      # 3️⃣ Instalar Chrome
       - name: Install Google Chrome
-        uses: browser-actions/setup-chrome@v1
-
-      # 4️⃣ Crear carpeta para resultados Allure (por si no existe)
-      - name: Prepare Allure Results Folder
-        run: mkdir -p target/allure-results
-
-      # 5️⃣ Instalar dependencias Allure necesarias (sin tocar pom.xml)
-      - name: Install Allure dependencies
         run: |
-          echo "Instalando dependencias de Allure..."
-          mvn dependency:get -Dartifact=io.qameta.allure:allure-cucumber7-jvm:2.24.0
-          mvn dependency:get -Dartifact=io.qameta.allure:allure-selenide:2.24.0
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+          google-chrome --version
 
-      # 6️⃣ Ejecutar los tests (modo headless)
-      - name: Run Selenide Tests (Headless)
-        env:
-          SELENIDE_HEADLESS: true
-          MAVEN_OPTS: "-Dselenide.headless=true -Dselenide.browser=chrome"
-        run: |
-          echo "Ejecutando tests en modo headless..."
-          mvn clean test -B -e || true  # Continuar aunque falle para ver reportes
-
-      # 7️⃣ Mostrar contenido del directorio target (debug)
-      - name: List Target Directory
-        if: always()
-        run: |
-          echo "Contenido de target:"
-          ls -R target || true
-
-      # 8️⃣ Generar reporte Allure (aunque falle la build)
-      - name: Generate Allure Report
-        if: always()
-        run: |
-          echo "Generando reporte Allure..."
-          if [ ! -d "target/allure-results" ]; then
-            mkdir -p target/allure-results
-            echo '{}' > target/allure-results/dummy.json
-          fi
-          mvn io.qameta.allure:allure-maven:2.13.9:report || true
-
-      # 9️⃣ Subir el reporte como artefacto
-      - name: Upload Allure Report
-        if: always()
-        uses: actions/upload-artifact@v4
+      # 4️⃣ Cache de Maven
+      - name: Cache Maven packages
+        uses: actions/cache@v3
         with:
-          name: allure-report
-          path: target/site/allure-maven-plugin
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      # 5️⃣ Ejecutar tests con Maven
+      - name: Run tests
+        run: mvn clean test -B -Dselenide.headless=true \
+            -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--remote-allow-origins=*"
+
+      # 6️⃣ Guardar logs si hay fallo
+      - name: Dump Chrome logs on failure
+        if: failure()
+        run: |
+          echo "=== Chrome logs ==="
+          cat /tmp/chromedriver.log || echo "No chromedriver log found"
