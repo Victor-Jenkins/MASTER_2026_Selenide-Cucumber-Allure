@@ -58,9 +58,4 @@ jobs:
 
       - name: Deploy report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: target/site/allure-maven-plugin
-          publish_branch: gh-pages
-          keep_files: true
-          
+        with: { github_token: ${{ secrets.GITHUB_TOKEN }}, publish_dir: target/site/allure-maven-plugin, publish_branch: gh-pages, keep_files: true }
