@@ -2,10 +2,10 @@ name: Selenide-Cucumber-Allure CI & Deploy
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
+    branches: [ main ]    # Se ejecuta al hacer push a main
   schedule:
-    - cron: '0 2 * * *' # Ejecuta todos los días a las 2:00 AM UTC
+    - cron: '0 0 * * *'   # Se ejecuta todos los días a medianoche UTC
+
 
 permissions:
   contents: write
