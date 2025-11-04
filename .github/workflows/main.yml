@@ -1,4 +1,4 @@
-name: Selenide-Cucumber-Allure Tests & Deploy to Pages
+name: Selenide-Cucumber-Allure Tests & Deploy to Pagess
 
 on:
   push:
