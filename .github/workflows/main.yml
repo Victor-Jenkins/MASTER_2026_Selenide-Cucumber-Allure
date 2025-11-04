@@ -37,26 +37,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      - name: Ensure Allure results directory exists
+        run: mkdir -p target/allure-results
+
       - name: Run tests
         run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub \
             -Dselenide.headless=true \
             -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" \
-            -Dsurefire.printSummary=true
-        continue-on-error: true  # Permite continuar aunque fallen tests
+            -Dsurefire.printSummary=true \
+            -Dallure.results.directory=target/allure-results
+        continue-on-error: true
 
-      - name: Ensure Allure results directory exists
-        run: mkdir -p target/allure-results
-
-      - name: Generate Allure report or fallback
-        run: |
-          if [ -d target/allure-results ] && [ "$(ls -A target/allure-results)" ]; then
-            mvn allure:report || true
-          fi
-          # Siempre crear index.html si no se generó nada
-          if [ ! -f target/site/allure-maven-plugin/index.html ]; then
-            mkdir -p target/site/allure-maven-plugin
-            echo "<html><body><h2>No Allure report generated</h2></body></html>" > target/site/allure-maven-plugin/index.html
-          fi
+      - name: Generate Allure report
+        run: mvn allure:report -B -Dallure.results.directory=target/allure-results || true
 
       - name: Upload Allure report artifact
         uses: actions/upload-artifact@v4
@@ -66,7 +59,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: test  # Espera a que el job de tests termine
+    needs: test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
