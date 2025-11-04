@@ -58,4 +58,16 @@ public class GoogleSteps {
         String url = webdriver().driver().getWebDriver().getCurrentUrl();
         assertFalse(url.contains("Google.com"));
     }
+
+    @Given("the Google search page")
+    public void theGoogleSearchPage() {
+    }
+
+    @When("we search for {string}")
+    public void weSearchFor(String arg0) {
+    }
+
+    @Then("the first result must be {string}")
+    public void theFirstResultMustBe(String arg0) {
+    }
 }

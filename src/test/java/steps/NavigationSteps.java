@@ -5,6 +5,7 @@ import io.cucumber.java.AfterAll;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 
 import static com.codeborne.selenide.Selenide.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,5 +34,17 @@ public class NavigationSteps {
     public void the_page_title_should_contain(String titlePart) {
         String t = title();
         assertTrue(t.toLowerCase().contains(titlePart.toLowerCase()));
+    }
+
+    @Given("number {int} and number {int}")
+    public void numberAndNumber(int arg0, int arg1) {
+    }
+
+    @When("the numbers are added together")
+    public void theNumbersAreAddedTogether() {
+    }
+
+    @Then("the sum must be equal to {int}")
+    public void theSumMustBeEqualTo(int arg0) {
     }
 }
