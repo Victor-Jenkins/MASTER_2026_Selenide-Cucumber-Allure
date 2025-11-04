@@ -37,11 +37,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Ensure Allure results directory exists
-        run: mkdir -p target/allure-results
-
-      - name: Run tests
+      - name: Run tests and generate Allure results
         run: |
+          mkdir -p target/allure-results
           mvn clean test -B \
             -Dselenide.remote=http://localhost:4444/wd/hub \
             -Dselenide.headless=true \
@@ -53,23 +51,26 @@ jobs:
       - name: Generate Allure report
         run: |
           mvn allure:report -B -Dallure.results.directory=target/allure-results || true
-          echo "📂 Checking Allure output structure:"
+          echo "📂 Report folders generated:"
           ls -R target/site || true
 
-      - name: Verify Allure report presence
+      - name: Detect Allure output folder
+        id: detect
         run: |
-          if [ -f target/site/allure-report/index.html ]; then
-            echo "✅ Allure report generated successfully!"
+          if [ -d target/site/allure-report ]; then
+            echo "path=target/site/allure-report" >> $GITHUB_OUTPUT
+          elif [ -d target/site/allure-maven-plugin ]; then
+            echo "path=target/site/allure-maven-plugin" >> $GITHUB_OUTPUT
           else
-            echo "❌ No Allure index.html found."
-            ls -R target/site
+            echo "path=" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload Allure report artifact
+        if: steps.detect.outputs.path != ''
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
-          path: target/site/allure-report
+          path: ${{ steps.detect.outputs.path }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -82,12 +83,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: allure-report
-          path: target/site/allure-report
+          path: target/allure-report
 
-      - name: Deploy report to GitHub Pages
+      - name: Deploy Allure report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: target/site/allure-report
+          publish_dir: target/allure-report
           publish_branch: gh-pages
           keep_files: true
