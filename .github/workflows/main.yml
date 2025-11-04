@@ -38,23 +38,37 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Run tests and generate Allure results
-        run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub -Dselenide.headless=true -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" -Dallure.results.directory=target/allure-results
+      - name: Ensure Allure results directory exists
+        run: mkdir -p target/allure-results
+
+      - name: Run tests
+        run: >
+          mvn clean test -B
+          -Dselenide.remote=http://localhost:4444/wd/hub
+          -Dselenide.headless=true
+          -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800"
+          -Dsurefire.printSummary=true
+          -Dallure.results.directory=target/allure-results
         continue-on-error: true
 
       - name: Generate Allure report
         run: mvn allure:report -B -Dallure.results.directory=target/allure-results || true
 
+      - name: Rename Allure main file to index.html
+        run: |
+          if [ -f target/site/allure-maven-plugin/allure-maven.html ]; then
+            mv target/site/allure-maven-plugin/allure-maven.html target/site/allure-maven-plugin/index.html
+          fi
+
       - name: Upload Allure report artifact
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
-          path: target/site/allure-maven-plugin/
+          path: target/site/allure-maven-plugin
 
   deploy:
     runs-on: ubuntu-latest
     needs: test
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,12 +77,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: allure-report
-          path: target/site/allure-maven-plugin/
+          path: target/site/allure-maven-plugin
 
       - name: Deploy report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: target/site/allure-maven-plugin
           publish_branch: gh-pages
-          publish_dir: target/site/allure-maven-plugin/
-          keep_files: false
+          keep_files: true
