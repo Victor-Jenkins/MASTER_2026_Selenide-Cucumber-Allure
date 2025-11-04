@@ -19,7 +19,6 @@ jobs:
           - 4444:4444
         options: >-
           --shm-size=2g
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,29 +41,35 @@ jobs:
         run: mkdir -p target/allure-results
 
       - name: Run tests
-        run: >
-          mvn clean test -B
-          -Dselenide.remote=http://localhost:4444/wd/hub
-          -Dselenide.headless=true
-          -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800"
-          -Dsurefire.printSummary=true
-          -Dallure.results.directory=target/allure-results
+        run: |
+          mvn clean test -B \
+            -Dselenide.remote=http://localhost:4444/wd/hub \
+            -Dselenide.headless=true \
+            -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" \
+            -Dsurefire.printSummary=true \
+            -Dallure.results.directory=target/allure-results
         continue-on-error: true
 
       - name: Generate Allure report
-        run: mvn allure:report -B -Dallure.results.directory=target/allure-results || true
-
-      - name: Rename Allure main file to index.html
         run: |
-          if [ -f target/site/allure-maven-plugin/allure-maven.html ]; then
-            mv target/site/allure-maven-plugin/allure-maven.html target/site/allure-maven-plugin/index.html
+          mvn allure:report -B -Dallure.results.directory=target/allure-results || true
+          echo "📂 Checking Allure output structure:"
+          ls -R target/site || true
+
+      - name: Verify Allure report presence
+        run: |
+          if [ -f target/site/allure-report/index.html ]; then
+            echo "✅ Allure report generated successfully!"
+          else
+            echo "❌ No Allure index.html found."
+            ls -R target/site
           fi
 
       - name: Upload Allure report artifact
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
-          path: target/site/allure-maven-plugin
+          path: target/site/allure-report
 
   deploy:
     runs-on: ubuntu-latest
@@ -77,12 +82,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: allure-report
-          path: target/site/allure-maven-plugin
+          path: target/site/allure-report
 
       - name: Deploy report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: target/site/allure-maven-plugin
+          publish_dir: target/site/allure-report
           publish_branch: gh-pages
           keep_files: true
