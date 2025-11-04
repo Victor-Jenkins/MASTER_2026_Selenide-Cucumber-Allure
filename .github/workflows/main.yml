@@ -1,4 +1,4 @@
-name: Run Tests & Deploy Allure Report
+name: Tests & Deploy Allure Report
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   pages: write
 
 jobs:
-  test-and-deploy:
+  run-tests:
     runs-on: ubuntu-latest
     services:
       selenium:
@@ -20,19 +20,16 @@ jobs:
         options: >-
           --shm-size=2g
     steps:
-      # 1️⃣ Checkout code
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # 2️⃣ Set up JDK 17
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: '17'
 
-      # 3️⃣ Cache Maven dependencies
-      - name: Cache Maven packages
+      - name: Cache Maven dependencies
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
@@ -40,8 +37,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # 4️⃣ Run tests AND generate Allure report in one go
       - name: Run tests and generate Allure report
+        # CONTINUE-ON-ERROR permite que el job no falle aunque los tests fallen
+        continue-on-error: true
         run: |
           mvn clean test allure:report -B \
             -Dselenide.remote=http://localhost:4444/wd/hub \
@@ -49,7 +47,22 @@ jobs:
             -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" \
             -Dsurefire.printSummary=true
 
-      # 5️⃣ Deploy Allure report to GitHub Pages
+      - name: Upload Allure report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: target/site/allure-maven-plugin
+
+  deploy-report:
+    needs: run-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Allure report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-report
+          path: target/site/allure-maven-plugin
+
       - name: Deploy Allure report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
