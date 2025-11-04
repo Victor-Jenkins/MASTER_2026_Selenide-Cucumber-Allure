@@ -6,7 +6,6 @@ on:
   schedule:
     - cron: '0 0 * * *'   # Se ejecuta todos los días a medianoche UTC
 
-
 permissions:
   contents: write
   pages: write
@@ -76,7 +75,7 @@ jobs:
       - name: Deploy report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GH_PAT }}  # Usar PAT para cron
           publish_dir: target/site/allure-maven-plugin
           publish_branch: gh-pages
           keep_files: true
