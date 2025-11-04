@@ -1,4 +1,4 @@
-name: Tests & Deploy Allure Report
+name: Selenide-Cucumber-Allure CI & Deploy
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   pages: write
 
 jobs:
-  run-tests:
+  test:
     runs-on: ubuntu-latest
     services:
       selenium:
@@ -20,7 +20,7 @@ jobs:
         options: >-
           --shm-size=2g
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -29,7 +29,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Cache Maven dependencies
+      - name: Cache Maven packages
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
@@ -37,15 +37,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Run tests and generate Allure report
-        # CONTINUE-ON-ERROR permite que el job no falle aunque los tests fallen
-        continue-on-error: true
-        run: |
-          mvn clean test allure:report -B \
-            -Dselenide.remote=http://localhost:4444/wd/hub \
+      - name: Run tests
+        run: mvn clean test -B -Dselenide.remote=http://localhost:4444/wd/hub \
             -Dselenide.headless=true \
             -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" \
             -Dsurefire.printSummary=true
+        continue-on-error: true  # Permite continuar aunque fallen tests
+
+      - name: Ensure Allure results directory exists
+        run: mkdir -p target/allure-results
+
+      - name: Generate Allure report or fallback
+        run: |
+          if [ -d target/allure-results ] && [ "$(ls -A target/allure-results)" ]; then
+            mvn allure:report || true
+          fi
+          # Siempre crear index.html si no se generó nada
+          if [ ! -f target/site/allure-maven-plugin/index.html ]; then
+            mkdir -p target/site/allure-maven-plugin
+            echo "<html><body><h2>No Allure report generated</h2></body></html>" > target/site/allure-maven-plugin/index.html
+          fi
 
       - name: Upload Allure report artifact
         uses: actions/upload-artifact@v4
@@ -53,17 +64,20 @@ jobs:
           name: allure-report
           path: target/site/allure-maven-plugin
 
-  deploy-report:
-    needs: run-tests
+  deploy:
     runs-on: ubuntu-latest
+    needs: test  # Espera a que el job de tests termine
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Download Allure report artifact
         uses: actions/download-artifact@v4
         with:
           name: allure-report
           path: target/site/allure-maven-plugin
 
-      - name: Deploy Allure report to GitHub Pages
+      - name: Deploy report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
