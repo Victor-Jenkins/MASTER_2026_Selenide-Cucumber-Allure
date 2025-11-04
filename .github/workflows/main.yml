@@ -19,6 +19,7 @@ jobs:
           - 4444:4444
         options: >-
           --shm-size=2g
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -44,33 +45,21 @@ jobs:
             -Dselenide.remote=http://localhost:4444/wd/hub \
             -Dselenide.headless=true \
             -Dchromeoptions.args="--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--window-size=1280,800" \
-            -Dsurefire.printSummary=true \
             -Dallure.results.directory=target/allure-results
         continue-on-error: true
 
       - name: Generate Allure report
         run: |
-          mvn allure:report -B -Dallure.results.directory=target/allure-results || true
-          echo "📂 Report folders generated:"
+          mvn allure:report -B -Dallure.results.directory=target/allure-results
+          mv target/site/allure-maven-plugin target/site/allure-report || true
+          echo "📂 Contents of target/site:"
           ls -R target/site || true
 
-      - name: Detect Allure output folder
-        id: detect
-        run: |
-          if [ -d target/site/allure-report ]; then
-            echo "path=target/site/allure-report" >> $GITHUB_OUTPUT
-          elif [ -d target/site/allure-maven-plugin ]; then
-            echo "path=target/site/allure-maven-plugin" >> $GITHUB_OUTPUT
-          else
-            echo "path=" >> $GITHUB_OUTPUT
-          fi
-
       - name: Upload Allure report artifact
-        if: steps.detect.outputs.path != ''
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
-          path: ${{ steps.detect.outputs.path }}
+          path: target/site/allure-report
 
   deploy:
     runs-on: ubuntu-latest
@@ -91,4 +80,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: target/allure-report
           publish_branch: gh-pages
-          keep_files: true
+          force_orphan: true
