@@ -1,0 +1,6 @@
+# Ignorar archivos generados para el cálculo de lenguajes en GitHub
+*.html linguist-vendored
+*.css linguist-vendored
+*.js linguist-vendored
+target/** linguist-vendored
+site/** linguist-vendored
