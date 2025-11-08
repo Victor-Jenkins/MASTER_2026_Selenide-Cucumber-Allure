@@ -27,9 +27,7 @@ Automated UI tests with **Selenide**, **Cucumber**, and **Allure**.
 
 ---
 
-## Estado del CI
 
-![CI](https://github.com/<TU_USUARIO>/<TU_REPO>/actions/workflows/ci.yml/badge.svg)  
 
 Todos los tests se ejecutan automáticamente en cada push a `main` o pull request.  
 
